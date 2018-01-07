@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using FunctionDrawer.Properties;
 
 namespace FunctionDrawer
 {
@@ -20,7 +21,7 @@ namespace FunctionDrawer
             var operationStack = new Stack<Operation>();
 
             if (_rnp.Count == 0)
-                throw new Exception("Zero arguments");
+                throw new Exception(Resources.EmptyExpression);
             
             foreach (var value in _rnp)
             {
@@ -37,7 +38,7 @@ namespace FunctionDrawer
                 }
 
                 if (operationStack.Count == 0)
-                    throw new ArgumentException();
+                    throw new Exception(Resources.LackOfFunctionArgument);
 
                 var right = operationStack.Pop();
                 switch (value)
@@ -55,16 +56,11 @@ namespace FunctionDrawer
                         operationStack.Push(new Negative(right));
                         continue;
                 }
-
-                //if (value.Equals("-") && (i - 2 < 0 || funcs.Contains(_rnp[i-2])))
-                //{
-                //    operationStack.Push(new Negative(right));
-                //    continue;
-                //}
+                
                 if (operationStack.Count == 0)
-                    throw new IndexOutOfRangeException();
+                    throw new Exception(Resources.IncompleteExpression);
 
-                Operation left = operationStack.Pop();
+                var left = operationStack.Pop();
                 switch (value)
                 {
                     case "+":
@@ -82,21 +78,29 @@ namespace FunctionDrawer
                     case "^":
                         operationStack.Push(new Power(left, right));
                         continue;
+                    default:
+                        throw new Exception(Resources.InvalidOperator);
                 }
             }
 
             if (operationStack.Count > 1)
-                throw new Exception("Too many");
+                throw new Exception(Resources.TooManyOperators);
             return operationStack.Pop();
         }
 
         private void MakeRnp(string text)
         {
-            text = Regex.Replace(text, @"\s+", ""); //spacje
-            text = Regex.Replace(text, @"(?<=[^\d\)]|^)\-(\d+)", "neg($1)");
-            text = Regex.Replace(text, @"(?<=\d)\(", "*(");
-            text = Regex.Replace(text, @"\)(?=\d)", ")*");
+            // remove spaces
+            text = Regex.Replace(text, @"\s+", "");
+            // change e.g. "f(t) = 4t" to "4x"
+            if (Regex.IsMatch(text, @"\w+\((\w+)\)=(.*)"))
+                text = Regex.Replace(text, Regex.Replace(text, @"\w+\((\w+)\)=(.*)", "$1"), "x");
             text = Regex.Replace(text, @"\w+\(\w+\)=(.*)", "$1");
+            // change expression with negative number first to neg function
+            text = Regex.Replace(text, @"(?<=[^\d\)]|^)\-(\d+)", "neg($1)");
+            // add multiplication to bracket expression or x
+            text = Regex.Replace(text, @"(?<=[\d\)x])(?=[\(x])", "*");
+            text = Regex.Replace(text, @"\)(?=\d)", ")*");
 
             _stack = new Stack<string>();
             _temp = new StringBuilder();
@@ -128,7 +132,7 @@ namespace FunctionDrawer
                         _rnp.Add(_stack.Pop());
 
                     if (_stack.Count == 0 || !_stack.Peek().Equals("("))
-                        throw new NotEnoughBrackets();
+                        throw new Exception(Resources.NotEnoughBrackets);
 
                     _stack.Pop();
                 }
@@ -136,19 +140,19 @@ namespace FunctionDrawer
 
             while (_stack.Count != 0)
             {
-                string op = _stack.Pop();
+                var op = _stack.Pop();
 
                 if (op.Equals("("))
-                    throw new NotEnoughBrackets();
+                    throw new Exception(Resources.NotEnoughBrackets);
 
                 if (!_funcs.Contains(op))
-                    throw new FormatException();
+                    throw new Exception(Resources.InvalidFunction);
 
                 _rnp.Add(op);
             }
         }
 
-        public class NotEnoughBrackets : ArithmeticException { }
+        //public class NotEnoughBracketsException : ArithmeticException { }
 
         private bool EvaluateNumber(char c, char next)
         {
@@ -164,7 +168,7 @@ namespace FunctionDrawer
             if (char.IsDigit(next) || (IsNumber(_temp.ToString()) && next.Equals('.') || next.Equals(',')))
                 return true;
 
-            if ((_temp.Length != 0 && IsNumber(_temp.ToString())))
+            if (_temp.Length != 0 && IsNumber(_temp.ToString()))
             {
                 _rnp.Add(_temp.ToString());
                 _temp.Clear();
@@ -180,7 +184,7 @@ namespace FunctionDrawer
 
             if (_funcs.Contains(_temp.ToString()) || !char.IsLetter(next) && _temp.Length != 0 && _funcs.Contains(_temp.ToString()))
             {
-                string op = _temp.ToString();
+                var op = _temp.ToString();
                 _temp.Clear();
 
                 while (_stack.Count != 0 && !HasHigherPrior(op, _stack.Peek()))
@@ -194,9 +198,9 @@ namespace FunctionDrawer
             return false;
         }
 
-        private bool HasHigherPrior(string op1, string op2) => GetPrior(op1) > GetPrior(op2);
+        private static bool HasHigherPrior(string op1, string op2) => GetPrior(op1) > GetPrior(op2);
 
-        private int GetPrior(string op)
+        private static int GetPrior(string op)
         {
             switch (op)
             {
@@ -224,9 +228,9 @@ namespace FunctionDrawer
             if (string.IsNullOrWhiteSpace(text))
                 return false;
 
-            bool dot = false;
+            var dot = false;
 
-            foreach (char c in text)
+            foreach (var c in text)
                 if (!char.IsDigit(c))
                 {
                     if (!dot && (c.Equals('.') || c.Equals(',')))

@@ -117,4 +117,28 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="EmptyExpression" xml:space="preserve">
+    <value>Puste wyrażenie</value>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>Błąd: {0}</value>
+  </data>
+  <data name="IncompleteExpression" xml:space="preserve">
+    <value>Niedokończone wyrażenie</value>
+  </data>
+  <data name="InvalidFunction" xml:space="preserve">
+    <value>Niepoprawna funkcja</value>
+  </data>
+  <data name="InvalidOperator" xml:space="preserve">
+    <value>Błędny operator</value>
+  </data>
+  <data name="LackOfFunctionArgument" xml:space="preserve">
+    <value>Brak argumentu funkcji</value>
+  </data>
+  <data name="NotEnoughBrackets" xml:space="preserve">
+    <value>Brak otwarcia lub zamknięcia nawiasu</value>
+  </data>
+  <data name="TooManyOperators" xml:space="preserve">
+    <value>Za dużo operatorów</value>
+  </data>
 </root>

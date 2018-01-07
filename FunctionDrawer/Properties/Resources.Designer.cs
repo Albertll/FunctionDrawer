@@ -59,5 +59,77 @@ namespace FunctionDrawer.Properties {
                 resourceCulture = value;
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Empty expression.
+        /// </summary>
+        internal static string EmptyExpression {
+            get {
+                return ResourceManager.GetString("EmptyExpression", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error: {0}.
+        /// </summary>
+        internal static string Error {
+            get {
+                return ResourceManager.GetString("Error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Incomplete expression.
+        /// </summary>
+        internal static string IncompleteExpression {
+            get {
+                return ResourceManager.GetString("IncompleteExpression", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid function.
+        /// </summary>
+        internal static string InvalidFunction {
+            get {
+                return ResourceManager.GetString("InvalidFunction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid operator.
+        /// </summary>
+        internal static string InvalidOperator {
+            get {
+                return ResourceManager.GetString("InvalidOperator", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Lack of function argument.
+        /// </summary>
+        internal static string LackOfFunctionArgument {
+            get {
+                return ResourceManager.GetString("LackOfFunctionArgument", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Not enough brackets.
+        /// </summary>
+        internal static string NotEnoughBrackets {
+            get {
+                return ResourceManager.GetString("NotEnoughBrackets", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Too many operators.
+        /// </summary>
+        internal static string TooManyOperators {
+            get {
+                return ResourceManager.GetString("TooManyOperators", resourceCulture);
+            }
+        }
     }
 }

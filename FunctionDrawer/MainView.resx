@@ -117,28 +117,7 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="EmptyExpression" xml:space="preserve">
-    <value>Empty expression</value>
-  </data>
-  <data name="Error" xml:space="preserve">
-    <value>Error: {0}</value>
-  </data>
-  <data name="IncompleteExpression" xml:space="preserve">
-    <value>Incomplete expression</value>
-  </data>
-  <data name="InvalidFunction" xml:space="preserve">
-    <value>Invalid function</value>
-  </data>
-  <data name="InvalidOperator" xml:space="preserve">
-    <value>Invalid operator</value>
-  </data>
-  <data name="LackOfFunctionArgument" xml:space="preserve">
-    <value>Lack of function argument</value>
-  </data>
-  <data name="NotEnoughBrackets" xml:space="preserve">
-    <value>Not enough brackets</value>
-  </data>
-  <data name="TooManyOperators" xml:space="preserve">
-    <value>Too many operators</value>
-  </data>
+  <metadata name="_bsViewModel.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>17, 17</value>
+  </metadata>
 </root>

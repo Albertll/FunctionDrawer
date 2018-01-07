@@ -4,11 +4,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("FunctionDrawer")]
-[assembly: AssemblyDescription("Function Drawer")]
+[assembly: AssemblyTitle("FunctionDrawerTests")]
+[assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Albertl")]
-[assembly: AssemblyProduct("Function Drawer")]
+[assembly: AssemblyProduct("FunctionDrawerTests")]
 [assembly: AssemblyCopyright("Copyright © Albertl 2018")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -19,7 +19,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("77df7f8c-8ad9-4ef6-83a9-10d9a3c60753")]
+[assembly: Guid("7fab4a65-25ce-4c7c-bf6a-721b14d41d6e")]
 
 // Version information for an assembly consists of the following four values:
 //
