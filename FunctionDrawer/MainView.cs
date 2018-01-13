@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace FunctionDrawer
@@ -12,13 +14,26 @@ namespace FunctionDrawer
             InitializeComponent();
             _bsViewModel.DataSource = ViewModel;
 
-            ViewModel.Width = ClientSize.Width;
-            ViewModel.Height = ClientSize.Height;
-            ViewModel.BackgroundColor = DefaultBackColor;
+            //ViewModel.Width = ClientSize.Width;
+            //ViewModel.Height = ClientSize.Height;
 
             ViewModel.PropertyChanged += (s, e) => Redraw();
-            Paint += (sender, e) => Redraw();
-            Resize += OnResize;
+            DoubleBuffered = true;
+        }
+
+        private ViewModel ViewModel { get; } = new ViewModel();
+
+        private Point _mousePos;
+
+        private void Redraw() => Invalidate();
+
+        #region Events
+
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+            ViewModel.Paint(e.Graphics);
         }
 
         protected override void OnLoad(EventArgs e)
@@ -27,64 +42,38 @@ namespace FunctionDrawer
             Redraw();
         }
 
-        private ViewModel ViewModel { get; } = new ViewModel();
-
-
-        private Point _mousePos;
-
-        private void Redraw()
+        protected override void OnResize(EventArgs e)
         {
-            var t = new Stopwatch();
-            t.Start();
-            using (var bitmap = ViewModel.GetImage())
-                DrawImage(bitmap);
-            t.Stop();
-            //Console.WriteLine(t.Elapsed);
-        }
+            base.OnResize(e);
 
-        private void DrawImage(Image bitmap)
-        {
-            var graphics = CreateGraphics();
-            //graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            graphics.DrawImage(bitmap, 0, 0, ViewModel.Width, ViewModel.Height);
-        }
-
-        #region Events
-
-        private void OnResize(object sender, EventArgs e)
-        {
-            if (ClientSize.Width == 0 || ClientSize.Height == 0)
-                return;
-
-            // clear screen
-            using (var bitmap = ViewModel.GetImage(true))
-                DrawImage(bitmap);
-            
             ViewModel.Width = ClientSize.Width;
             ViewModel.Height = ClientSize.Height;
-
+            
             Redraw();
         }
 
         private void OnMouseWheel(object sender, MouseEventArgs e)
         {
-            //TODO
-            //int dir = e.Delta / Math.Abs(e.Delta);
+            var dirX = e.Delta / 5.0 / Math.Abs(e.Delta);
+            var dirY = e.Delta / 5.0 / Math.Abs(e.Delta);
+            if (ModifierKeys.HasFlag(Keys.Shift))
+                dirX = 0;
+            if (ModifierKeys.HasFlag(Keys.Control))
+                dirY = 0;
 
-            //ViewModel.Movement.X = ViewModel.GetXFromScreenX(e.X);
-            //ViewModel.Movement.Y = ViewModel.GetXFromScreenX(e.Y);
-
-            //ViewModel.ScaleShift -= dir;
-            //_lbY.Text = $"ScaleShift = {ViewModel.ScaleShift.X}";
-
-            //ViewModel.Movement.X = (ViewModel.Movement.X - (e.X - 100) * ViewModel.Scale.X) * 1.5 * dir + (e.X - 100) * ViewModel.Scale.X;
-            //ViewModel.Movement.Y = Convert.ToInt32((ViewModel.Movement.Y - (e.Y - 8 - 350)) * 1.5 * dir + (e.Y - 8 - 350));
-
-            //if (e.Button == MouseButtons.Left)
-            //    OnMouseDown(sender, e);
-
-            //Redraw();
-            //OnMouseMove(sender, e);
+            new Task(
+                () =>
+                {
+                    for (var i = 0; i < 5; i++)
+                    {
+                        BeginInvoke((Action) (() =>
+                        {
+                            ViewModel.ChangeScale(e.Location.X, e.Location.Y, dirX, dirY);
+                            _lbS.Text = $@"Scale: X = {ViewModel.ScaleFactor.X}, Y = {ViewModel.ScaleFactor.Y}";
+                        }));
+                        Thread.Sleep(30);
+                    }
+                }).Start();
         }
 
         private void OnMouseDown(object sender, MouseEventArgs e)

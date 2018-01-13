@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
+using System.Globalization;
+using System.Windows.Forms;
 using FunctionDrawer.Properties;
 
 namespace FunctionDrawer
@@ -9,22 +10,47 @@ namespace FunctionDrawer
     internal class ViewModel : NotifyPropertyChanged
     {
         #region Fields
-
-        private readonly IList<int> _currentPoints = new List<int>();
+        
         private string _errorMessage;
         private string _function;
+        private int _width;
+        private int _height;
+        private DoublePoint _moveStartPoint;
+        private DoublePoint _movement = new DoublePoint();
 
         #endregion
 
         #region Properties
 
-        internal IOperation Operation { get; set; }
-        internal int Height { get; set; }
-        internal int Width { get; set; }
-        internal Color BackgroundColor { get; set; }
-        private DoublePoint _scaleShift  = new DoublePoint(-7, -7);
-        private DoublePoint _movement  = new DoublePoint();
-        private DoublePoint _moveStartPoint;
+        internal IOperation Operation { get; private set; }
+        internal DoublePoint ScaleFactor { get; } = new DoublePoint(-7, -7);
+
+        internal int Height
+        {
+            get { return _height; }
+            set
+            {
+                var org = _height;
+                _height = value;
+                _moveStartPoint = null;
+                ShortMove(0, (org - value) / 2);
+            }
+        }
+
+        internal int Width
+        {
+            get { return _width; }
+            set
+            {
+                var org = _width;
+                _width = value;
+                _moveStartPoint = null;
+                ShortMove((org - value) / 2, 0);
+                //TODO
+                //if (org > value)
+                //    _scaleShift.X += 0.003;
+            }
+        }
 
         public string ErrorMessage
         {
@@ -47,219 +73,273 @@ namespace FunctionDrawer
             }
         }
 
+        private DoublePoint Movement
+        {
+            get { return _movement; }
+            set
+            {
+                _movement = value;
+                OnPropertyChanged();
+            }
+        }
+
         #endregion
 
         public ViewModel()
         {
             Function = "x";
+            Function = "sin(x)";
         }
 
         internal void EvaluateOperation(string input)
         {
-            IOperation operation = null;
+            Operation = null;
             try
             {
-                operation = new ExpressionEvaluator().Evaluate(input);
+                Operation = new ExpressionEvaluator().Evaluate(input);
                 ErrorMessage = string.Empty;
-            }
-            catch (ArgumentException)
-            {
-                ErrorMessage = "XMissing argument";
             }
             catch (Exception ex)
             {
                 ErrorMessage = string.Format(Resources.Error, ex.Message);
             }
-            finally
-            {
-                Operation = operation;
-            }
+        }
+
+        public void ChangeScale(int locationX, int locationY, double scaleX, double scaleY)
+        {
+            ShortMove(locationX, locationY);
+
+            ScaleFactor.X -= scaleX;
+            ScaleFactor.Y -= scaleY;
+
+            ShortMove(-locationX, -locationY);
         }
 
         public void StartMoving()
         {
-            _moveStartPoint = _movement;
+            _moveStartPoint = Movement;
         }
 
         public void MoveScreen(int x, int y)
         {
-            _movement = _moveStartPoint + new DoublePoint(x, y) * Scale;
-            OnPropertyChanged("Movement");
-        }
-
-        private void ClearOldPoints(DirectBitmap dBitmap)
-        {
-            foreach (var point in _currentPoints)
-                dBitmap[point] = BackgroundColor.ToArgb();
-
-            _currentPoints.Clear();
-        }
-
-        private void Draw(DirectBitmap dBitmap, int x, int y, Color? color = null)
-        {
-            if (x < 0 || x >= Width || y < 0 || y >= Height)
+            if (_moveStartPoint == null)
                 return;
 
-            var point = x + Width * y;
-            dBitmap[point] = (color ?? Color.Black).ToArgb();
-            _currentPoints.Add(point);
+            Movement = _moveStartPoint + new DoublePoint(x, y) * Scale;
         }
 
-        private void DrawCoordinateSystem(DirectBitmap dBitmap)
+        private void ShortMove(int x, int y)
+        {
+            Movement += new DoublePoint(x, y) * Scale;
+        }
+
+        public void Paint(Graphics graphics)
+        {
+            //graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            if (Operation == null)
+                return;
+
+            DrawCoordinateSystem(graphics);
+            
+            DrawFunction(graphics);
+        }
+
+        private void DrawCoordinateSystem(Graphics graphics)
+        {
+            const int borderSpace = 10;
+
+            var pen = new Pen(Color.Blue);
+            var brush = new SolidBrush(Color.Blue);
+            var font = new Form().Font;
+
+            // vertical line
+            var lineX = (int)GetScreenXFromX(0);
+            lineX = Math.Min(Math.Max(lineX, borderSpace * 2), Width - borderSpace * 2);
+
+            graphics.DrawLines(pen, GetLineWithArrow(lineX, borderSpace, lineX, Height - borderSpace));
+
+            foreach (var y in GetLabelPoints(Scale.Y, GetYFromScreenY(Width - borderSpace), borderSpace, GetScreenYFromY))
+            {
+                graphics.DrawLine(pen, lineX - 2, (int)y, lineX + 2, (int)y);
+
+                var value = GetYFromScreenY(y) / 10 * 10;
+                if (Math.Abs(value) > 1e-12)
+                    graphics.DrawString(value.ToString(CultureInfo.InvariantCulture),
+                        font, brush, lineX + 5, (int)y - 4);
+            }
+
+            // horizontal line
+            var lineY = (int)GetScreenYFromY(0);
+            lineY = Math.Min(Math.Max(lineY, borderSpace * 2), Height - borderSpace * 2);
+
+            graphics.DrawLines(pen, GetLineWithArrow(borderSpace, lineY, Width - borderSpace, lineY));
+
+            foreach (var x in GetLabelPoints(Scale.X, GetXFromScreenX(borderSpace), Width - borderSpace, GetScreenXFromX))
+            {
+                graphics.DrawLine(pen, (int)x, lineY - 2, (int)x, lineY + 2);
+
+                var value = GetXFromScreenX(x) / 10 * 10;
+                if (Math.Abs(value) > 1e-12)
+                    graphics.DrawString(value.ToString(CultureInfo.InvariantCulture),
+                        font, brush, (int)x - 4, lineY + 5);
+            }
+        }
+
+        private static IEnumerable<double> GetLabelPoints(double scaleFactor, double start, double end, Func<double, double> getScreenVFromV)
+        {
+            // magic
+            var a = Math.Round(-1.5 - Math.Log10(scaleFactor * 0.5) * 2) / 2;
+            var unit = Math.Pow(10, 1 - Math.Floor(-0.5 + a)) / (2 - 2 * Math.Abs(a - Math.Floor(a)));
+
+            var increasing = getScreenVFromV(start) < getScreenVFromV(end);
+            var value = getScreenVFromV(start - start % unit);
+            var current = start;
+
+            while (increasing ? value < end : value > end)
+            {
+                yield return value;
+
+                current += unit * 0.999;
+                var newValue = getScreenVFromV(current - current % unit);
+                if (newValue == value && 0 != current - current % unit)
+                    break;
+                value = newValue;
+            }
+        }
+
+        private static Point[] GetLineWithArrow(int x1, int y1, int x2, int y2)
         {
             const int arrowWidth = 5;
             const int arrowHeight = 10;
-            const int borderSpace = 10;
 
-            Action<int, int> setPoint = (x, y) => Draw(dBitmap, x, y, Color.Blue);
-
-            // vertical line
-            var lineX = GetScreenXFromX(0);
-            lineX = Math.Min(Math.Max(lineX, borderSpace * 2), Width - borderSpace * 2);
-            DrawLine(setPoint, lineX, borderSpace + arrowHeight, lineX, Height);
-            // arrow
-            DrawLine(setPoint, lineX - arrowWidth, borderSpace + arrowHeight, lineX + arrowWidth, borderSpace + arrowHeight);
-            DrawLine(setPoint, lineX - arrowWidth, borderSpace + arrowHeight, lineX, borderSpace);
-            DrawLine(setPoint, lineX + arrowWidth, borderSpace + arrowHeight, lineX, borderSpace);
-
-            // horizontal line
-            var lineY = GetScreenYFromY(0);
-            lineY = Math.Min(Math.Max(lineY, borderSpace * 2), Height - borderSpace * 2);
-            DrawLine(setPoint, borderSpace, lineY, Width - borderSpace - arrowHeight, lineY);
-            // arrow
-            DrawLine(setPoint, Width - borderSpace - arrowHeight, lineY - arrowWidth, Width - borderSpace - arrowHeight, lineY + arrowWidth);
-            DrawLine(setPoint, Width - borderSpace - arrowHeight, lineY - arrowWidth, Width - borderSpace, lineY);
-            DrawLine(setPoint, Width - borderSpace - arrowHeight, lineY + arrowWidth, Width - borderSpace, lineY);
-        }
-
-        private static void DrawLine(Action<int, int> setPoint, int x1, int y1, int x2, int y2)
-        {
             if (x1 == x2)
-            {
-                for (var y = Math.Min(y1, y2); y <= Math.Max(y1, y2); y++)
-                    setPoint(x1, y);
-                return;
-            }
-            
-            var x = x1;
-            do
-            {
-                var yFrom = (int)Math.Round((y2 - y1) * (x - x1) * 1.0 / (x2 - x1) + y1);
-                var yTo = (int)Math.Round((y2 - y1) * ((x1 < x2 ? x + 1 : x - 1) - x1) * 1.0 / (x2 - x1) + y1);
-                    
-                var y = yFrom;
-                do
-                    setPoint(x, y);
-                while (yFrom < yTo ? ++y < yTo : --y > yTo);
-            }
-            while (x1 < x2 ? ++x <= x2 : --x >= x2);
+                return new[]
+                {
+                    new Point(x2, y2),
+                    new Point(x1, y1 + arrowHeight),
+                    new Point(x1 - arrowWidth, y1 + arrowHeight),
+                    new Point(x1, y1),
+                    new Point(x1 + arrowWidth, y1 + arrowHeight),
+                    new Point(x1, y1 + arrowHeight),
+                };
+
+            if (y1 == y2)
+                return new[]
+                {
+                    new Point(x1, y1),
+                    new Point(x2 - arrowHeight, y2),
+                    new Point(x2 - arrowHeight, y2 - arrowWidth),
+                    new Point(x2, y2),
+                    new Point(x2 - arrowHeight, y2 + arrowWidth),
+                    new Point(x2 - arrowHeight, y2),
+                };
+            return new Point[0];
         }
 
-        public Image GetImage(bool onlyClear = false)
+        private void DrawFunction(Graphics graphics)
         {
-            using (var dBitmap = new DirectBitmap(Width, Height))
+            //TODO
+            int? last = null;
+            for (var screenX = 0; screenX < Width; screenX++)
             {
-                ClearOldPoints(dBitmap);
-
-                if (onlyClear || Operation == null)
-                    return dBitmap.Bitmap;
-
-                DrawCoordinateSystem(dBitmap);
-
-                //TODO
-                int? last = null;
-                for (var screenX = 0; screenX < Width; screenX++)
+                int screenY;
+                if (TryGetPointAt(screenX, out screenY))
                 {
-                    int screenY;
-                    if (GetPointAt(screenX, out screenY))
+                    //Draw(graphics, screenX, screenY);
+
+                    // if (last != null /*&& Math.Abs(screenY - last.Value) > 1*/)
                     {
-                        Draw(dBitmap, screenX, screenY);
+                        //var df = GetDx(GetXFromScreenX(screenX - 1));
+                        //var dg = GetDx(GetXFromScreenX(screenX));
 
-                        if (last != null && Math.Abs(screenY - last.Value) > 1)
-                        {
-                            var df = GetDx(GetXFromScreenX(screenX - 1));
-                            var dg = GetDx(GetXFromScreenX(screenX));
+                        //if (df > 0 && dg > 0 && last.Value > screenY ||
+                        //    df < 0 && dg < 0 && last.Value < screenY)
+                        //    for (var i = Math.Min(screenY, last.Value) + 1; i < Math.Max(screenY, last.Value); i++)
+                        //    {
+                        //        //Draw(graphics, screenX, i);
+                        //    }
+                        //graphics.DrawLine(new Pen(Color.Black), screenX, screenY, screenX-1, last.Value);
 
-                            if (df > 0 && dg > 0 && last.Value > screenY ||
-                                df < 0 && dg < 0 && last.Value < screenY)
-                                for (var i = Math.Min(screenY, last.Value) + 1; i < Math.Max(screenY, last.Value); i++)
-                                {
-                                    Draw(dBitmap, screenX, i);
-                                }
-
-                        }
-                        last = screenY;
-                    }
-                    else
-                    {
-                        if (last != null)
-                        {
-                            var df = GetDx(GetXFromScreenX(screenX - 1));
-                            var dg = GetDx(GetXFromScreenX(screenX));
-
-                            var asdf = 1.0;
-                            var q = GetScreenYFromY2(GetYFromX(GetXFromScreenX(screenX - 1)));
-                            var v = GetScreenYFromY2(GetYFromX(GetXFromScreenX(screenX - 1 + asdf)));
-                            var zz = 1e-10 * asdf;
-                            var qwerty = 0;
-                            while (asdf > 1e-10 && asdf <= 1 && v >= 0 && asdf - zz <= 1 && qwerty++ < 1000)
-                            {
-                                var z2 = GetDx(GetXFromScreenX(screenX - 1 + asdf - zz));
-                                var v2 = GetScreenYFromY2(GetYFromX(GetXFromScreenX(screenX - 1 + asdf - zz)));
-
-                                if (v2 > q || z2 < 0)
-                                {
-                                    zz *= 2;
-                                    continue;
-                                }
-
-                                //var z = GetDx(GetXFromScreenX(screenX - 1 + asdf - zz));
-                                //v = GetScreenYFromY2(GetYFromX(GetXFromScreenX(screenX - 1 + asdf - zz)));
-                                if (v2 < 0)
-                                    break;
-
-                                if (v2 < q && z2 > 0)
-                                {
-                                    asdf -= zz;
-                                    zz = 1e-10 * asdf;
-                                    continue;
-                                }
-
-                                asdf /= 2;
-                                //v = GetScreenYFromY2(GetYFromX(GetXFromScreenX(screenX - 1 + asdf - zz)));
-
-                            }
-
-
-                            if (v < 0 && df > 0 && dg > 0)
-                                for (int i = 0; i < last.Value; i++)
-                                    Draw(dBitmap, screenX, i);
-                        }
-
-                        last = null;
                     }
                 }
-                return dBitmap.Bitmap;
+                if (last != null /*&& Math.Abs(screenY - last.Value) > 1*/)
+                {
+                    var x1 = Math.Max(0, Math.Min(Width, screenX));
+                    var x2 = Math.Max(0, Math.Min(Width, screenX - 1));
+                    var y1 = Math.Max(0, Math.Min(Height, screenY));
+                    var y2 = Math.Max(0, Math.Min(Height, last.Value));
+                    if (y1 != 0 && y2 != Height && y2 != 0 && y1 != Height)
+                    graphics.DrawLine(new Pen(Color.Black), x1, y1, x2, y2);
+                }
+                last = screenY;
+                //else
+                //{
+                //    if (last != null)
+                //    {
+                //        var df = GetDx(GetXFromScreenX(screenX - 1));
+                //        var dg = GetDx(GetXFromScreenX(screenX));
+
+                //        var asdf = 1.0;
+                //        var q = GetScreenYFromY2(GetYFromX(GetXFromScreenX(screenX - 1)));
+                //        var v = GetScreenYFromY2(GetYFromX(GetXFromScreenX(screenX - 1 + asdf)));
+                //        var zz = 1e-10 * asdf;
+                //        var qwerty = 0;
+                //        while (asdf > 1e-10 && asdf <= 1 && v >= 0 && asdf - zz <= 1 && qwerty++ < 1000)
+                //        {
+                //            var z2 = GetDx(GetXFromScreenX(screenX - 1 + asdf - zz));
+                //            var v2 = GetScreenYFromY2(GetYFromX(GetXFromScreenX(screenX - 1 + asdf - zz)));
+
+                //            if (v2 > q || z2 < 0)
+                //            {
+                //                zz *= 2;
+                //                continue;
+                //            }
+
+                //            //var z = GetDx(GetXFromScreenX(screenX - 1 + asdf - zz));
+                //            //v = GetScreenYFromY2(GetYFromX(GetXFromScreenX(screenX - 1 + asdf - zz)));
+                //            if (v2 < 0)
+                //                break;
+
+                //            if (v2 < q && z2 > 0)
+                //            {
+                //                asdf -= zz;
+                //                zz = 1e-10 * asdf;
+                //                continue;
+                //            }
+
+                //            asdf /= 2;
+                //            //v = GetScreenYFromY2(GetYFromX(GetXFromScreenX(screenX - 1 + asdf - zz)));
+
+                //        }
+
+                //        //???
+                //        //if (v < 0 && df > 0 && dg > 0)
+                //        //    for (int i = 0; i < last.Value; i++)
+                //        //        Draw(graphics, screenX, i);
+                //    }
+
+                //    last = null;
+                //}
             }
         }
 
-        private double GetDx(double x)
-        {
-            var eps = x * 1e-11;
-            if (x == 0)
-                eps = double.Epsilon;
+        //private double GetDx(double x)
+        //{
+        //    var eps = x * 1e-11;
+        //    if (x == 0)
+        //        eps = double.Epsilon;
 
-            while (GetYFromX(x) == GetYFromX(x + eps) && eps < 2)
-                eps *= 2;
+        //    while (GetYFromX(x) == GetYFromX(x + eps) && eps < 2)
+        //        eps *= 2;
 
-            if (eps >= 2)
-                return 0;
+        //    if (eps >= 2)
+        //        return 0;
 
-            var value = (GetYFromX(x + eps) - GetYFromX(x)) / eps;
-            return value;
+        //    var value = (GetYFromX(x + eps) - GetYFromX(x)) / eps;
+        //    return value;
 
-            //return x >= 0 ? value : -value;
-        }
+        //    //return x >= 0 ? value : -value;
+        //}
 
         //private double GetDdx(double x)
         //{
@@ -280,32 +360,46 @@ namespace FunctionDrawer
         //    //return x >= 0 ? value : -value;
         //}
 
-        private DoublePoint Scale => new DoublePoint(Math.Pow(1.5, _scaleShift.X), Math.Pow(1.5, _scaleShift.Y));
+        private DoublePoint Scale => new DoublePoint(Math.Pow(2, ScaleFactor.X), Math.Pow(2, ScaleFactor.Y));
 
-        internal double GetXFromScreenX(double screenX) => screenX * Scale.X + _movement.X;
-        internal int GetScreenXFromX(double x) => Convert.ToInt32((x - _movement.X) / Scale.X);
+        internal double GetXFromScreenX(double screenX) => screenX * Scale.X + Movement.X;
+        internal double GetScreenXFromX(double x) => (x - Movement.X) / Scale.X;
 
         internal double GetYFromX(double x) => Operation.Result(x);
 
-        private int GetScreenYFromY(double y) => Convert.ToInt32(-(y + _movement.Y) / Scale.Y) + Height / 2;
-        private double GetScreenYFromY2(double y) => -(y + _movement.Y) / Scale.Y + Height / 2;
+        private double GetScreenYFromY(double y) => -(y + Movement.Y) / Scale.Y;
+        private double GetYFromScreenY(double screenY) => -screenY * Scale.Y - Movement.Y;
+        //private double GetScreenYFromY2(double y) => -(y + _movement.Y) / Scale.Y;
 
-        private bool GetPointAt(double screenX, out int value)
+        private bool TryGetPointAt(double screenX, out int value)
         {
+            value = -1;
             try
             {
-                value = GetScreenYFromY(GetYFromX(GetXFromScreenX(screenX)));
+                var result = GetYFromX(GetXFromScreenX(screenX));
+                if (double.IsNaN(result) || double.IsInfinity(result))
+                    return false;
 
-                if (value >= 0 && value < Height)
+                result = GetScreenYFromY(result);
+
+                if (result > Height)
+                    result = Height;
+
+                if (result >= 0 && result < Height)
+                {
+                    value = (int) result;
                     return true;
+                }
             }
-            catch { }
+            catch
+            {
+                return false;
+            }
 
-            value = 0;
             return false;
         }
 
-        private class DoublePoint
+        internal class DoublePoint
         {
             public double X { get; set; }
             public double Y { get; set; }
@@ -315,13 +409,13 @@ namespace FunctionDrawer
             public DoublePoint(double x, double y)
             { X = x; Y = y; }
 
-            public static implicit operator DoublePoint(System.Drawing.Point point)
+            public static implicit operator DoublePoint(Point point)
                 => new DoublePoint(point.X, point.Y);
 
             public static DoublePoint operator +(DoublePoint doublePoint, DoublePoint point2)
                 => new DoublePoint(doublePoint.X + point2.X, doublePoint.Y + point2.Y);
 
-            public static DoublePoint operator -(DoublePoint doublePoint, System.Drawing.Point point2)
+            public static DoublePoint operator -(DoublePoint doublePoint, Point point2)
                 => new DoublePoint(doublePoint.X - point2.X, doublePoint.Y - point2.Y);
 
             public static DoublePoint operator -(DoublePoint doublePoint, double value)

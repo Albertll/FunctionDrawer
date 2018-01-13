@@ -12,11 +12,11 @@ namespace FunctionDrawer
         private Stack<string> _stack;
         private IList<string> _rnp;
         private StringBuilder _temp;
-        private readonly string[] _funcs = { "+", "-", "*", "/", "^", "sin", "cos", "tan", "neg" };
+        private readonly string[] _funcs = { "+", "-", "*", "/", "^", "sin", "cos", "tan", "neg", "abs", "log", "abs", "pi" };
 
         public IOperation Evaluate(string text)
         {
-            MakeRnp(text);
+            MakeRnp(text.ToLowerInvariant());
 
             var operationStack = new Stack<Operation>();
 
@@ -37,12 +37,24 @@ namespace FunctionDrawer
                     continue;
                 }
 
+                if (value.Equals("pi"))
+                {
+                    operationStack.Push(new Pi());
+                    continue;
+                }
+
                 if (operationStack.Count == 0)
                     throw new Exception(Resources.LackOfFunctionArgument);
 
                 var right = operationStack.Pop();
                 switch (value)
                 {
+                    case "abs":
+                        operationStack.Push(new Abs(right));
+                        continue;
+                    case "log":
+                        operationStack.Push(new Log(right));
+                        continue;
                     case "sin":
                         operationStack.Push(new Sinus(right));
                         continue;
@@ -97,7 +109,7 @@ namespace FunctionDrawer
                 text = Regex.Replace(text, Regex.Replace(text, @"\w+\((\w+)\)=(.*)", "$1"), "x");
             text = Regex.Replace(text, @"\w+\(\w+\)=(.*)", "$1");
             // change expression with negative number first to neg function
-            text = Regex.Replace(text, @"(?<=[^\d\)]|^)\-(\d+)", "neg($1)");
+            text = Regex.Replace(text, @"(?<=[^\d\)xe]|^)\-(\d+)", "neg($1)");
             // add multiplication to bracket expression or x
             text = Regex.Replace(text, @"(?<=[\d\)x])(?=[\(x])", "*");
             text = Regex.Replace(text, @"\)(?=\d)", ")*");
@@ -152,20 +164,24 @@ namespace FunctionDrawer
             }
         }
 
-        //public class NotEnoughBracketsException : ArithmeticException { }
-
         private bool EvaluateNumber(char c, char next)
         {
             if (char.IsDigit(c) && (_temp.Length == 0 || IsNumber(_temp.ToString())))
                 _temp.Append(c);
 
-            if (IsNumber(_temp.ToString()) && (c.Equals('.') || c.Equals(',')))
+            if (IsNumber(_temp.ToString()) && (c.Equals('.') || c.Equals(',') || c.Equals('e') || c.Equals('-')))
                 _temp.Append(c);
 
             if (!IsNumber(_temp.ToString()) && (char.IsDigit(next) || next.Equals('.') || next.Equals(',')))
                 return false;
 
-            if (char.IsDigit(next) || (IsNumber(_temp.ToString()) && next.Equals('.') || next.Equals(',')))
+            if (char.IsDigit(next) || IsNumber(_temp.ToString()) && next.Equals('.') || next.Equals(','))
+                return true;
+
+            if (next.Equals('e') && IsNumber(_temp.ToString()))
+                return true;
+
+            if (c.Equals('e') && next.Equals('-'))
                 return true;
 
             if (_temp.Length != 0 && IsNumber(_temp.ToString()))
@@ -215,8 +231,11 @@ namespace FunctionDrawer
                 case "sin":
                 case "cos":
                 case "tan":
+                case "log":
+                case "abs":
                     return 4;
                 case "neg":
+                case "pi":
                     return 5;
                 default:
                     return 0;
@@ -229,14 +248,21 @@ namespace FunctionDrawer
                 return false;
 
             var dot = false;
+            var e = false;
 
             foreach (var c in text)
                 if (!char.IsDigit(c))
                 {
                     if (!dot && (c.Equals('.') || c.Equals(',')))
-                            dot = true;
+                        dot = true;
                     else
-                        return false;
+                    {
+                        if (!e && c.Equals('e'))
+                            e = true;
+                        else if (!c.Equals('-') || !e)
+                            return false;
+
+                    }
                 }
 
             return true;

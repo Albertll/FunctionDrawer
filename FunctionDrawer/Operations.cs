@@ -44,6 +44,11 @@ namespace FunctionDrawer
         protected override bool HasVariable => true;
     }
 
+    internal sealed class Pi : Operation
+    {
+        protected override double Evaluate(double x) => Math.PI;
+    }
+
     internal sealed class Value : Operation
     {
         public Value(double value)
@@ -116,6 +121,16 @@ namespace FunctionDrawer
         protected override double Evaluate(double x)
         {
             return Math.Pow(Left.Result(x), Right.Result(x));
+        }
+    }
+
+    internal class Abs : OneArgumentOperation
+    {
+        public Abs(Operation right) : base(right) { }
+
+        protected override double Evaluate(double x)
+        {
+            return Math.Abs(Right.Result(x));
         }
     }
 
