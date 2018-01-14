@@ -1,6 +1,6 @@
 ﻿namespace FunctionDrawer
 {
-    partial class MainView
+    partial class DrawerMainView
     {
         /// <summary>
         /// Required designer variable.
@@ -50,7 +50,7 @@
             // 
             // _bsViewModel
             // 
-            this._bsViewModel.DataSource = typeof(FunctionDrawer.ViewModel);
+            this._bsViewModel.DataSource = typeof(FunctionDrawer.DrawerViewModel);
             // 
             // _lbX
             // 
@@ -104,7 +104,7 @@
             this._lbS.Text = "sLabel";
             this._lbS.TextAlign = System.Drawing.ContentAlignment.BottomRight;
             // 
-            // MainView
+            // DrawerMainView
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -115,11 +115,9 @@
             this.Controls.Add(this.label1);
             this.Controls.Add(this._lbX);
             this.Controls.Add(this._tbInputFunction);
-            this.Name = "MainView";
+            this.DoubleBuffered = true;
+            this.Name = "DrawerMainView";
             this.Text = "Function Drawer";
-            this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.OnMouseDown);
-            this.MouseMove += new System.Windows.Forms.MouseEventHandler(this.OnMouseMove);
-            this.MouseWheel += new System.Windows.Forms.MouseEventHandler(this.OnMouseWheel);
             ((System.ComponentModel.ISupportInitialize)(this._bsViewModel)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

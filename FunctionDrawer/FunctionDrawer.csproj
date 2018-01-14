@@ -63,29 +63,31 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DirectBitmap.cs" />
+    <Compile Include="DoublePoint.cs" />
     <Compile Include="ExpressionEvaluator.cs" />
-    <Compile Include="MainView.cs">
+    <Compile Include="DrawerMainView.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="MainView.Designer.cs">
-      <DependentUpon>MainView.cs</DependentUpon>
+    <Compile Include="DrawerMainView.Designer.cs">
+      <DependentUpon>DrawerMainView.cs</DependentUpon>
     </Compile>
+    <Compile Include="FunctionCalculator.cs" />
+    <Compile Include="IDrawerViewModel.cs" />
+    <Compile Include="IFunctionCalculator.cs" />
     <Compile Include="NotifyPropertyChanged.cs" />
     <Compile Include="Operations.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ViewModel.cs" />
-    <EmbeddedResource Include="MainView.resx">
-      <DependentUpon>MainView.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Properties\Resources.pl.resx">
-      <SubType>Designer</SubType>
+    <Compile Include="DrawerViewModel.cs" />
+    <EmbeddedResource Include="DrawerMainView.resx">
+      <DependentUpon>DrawerMainView.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
     </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.pl.resx" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>

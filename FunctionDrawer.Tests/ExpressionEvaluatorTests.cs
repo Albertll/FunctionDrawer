@@ -22,6 +22,7 @@ namespace FunctionDrawer.Tests
             Assert.AreEqual(evaluator.Evaluate("sin(x)").Result(0), 0);
             Assert.AreEqual(evaluator.Evaluate("cos(x)+sin(x)").Result(0), 1);
             Assert.AreEqual(evaluator.Evaluate("-sin(x)").Result(0), 1);
+            Assert.AreEqual(evaluator.Evaluate("sin(-x)").Result(0), 1);
         }
     }
 }

@@ -7,7 +7,7 @@ using FunctionDrawer.Properties;
 
 namespace FunctionDrawer
 {
-    internal class ViewModel : NotifyPropertyChanged
+    internal class DrawerViewModel : NotifyPropertyChanged, IDrawerViewModel
     {
         #region Fields
         
@@ -16,16 +16,15 @@ namespace FunctionDrawer
         private int _width;
         private int _height;
         private DoublePoint _moveStartPoint;
-        private DoublePoint _movement = new DoublePoint();
 
         #endregion
 
         #region Properties
+        
+        private FunctionCalculator FunctionCalc { get; } = new FunctionCalculator();
+        IFunctionCalculator IDrawerViewModel.FunctionCalc => FunctionCalc;
 
-        internal IOperation Operation { get; private set; }
-        internal DoublePoint ScaleFactor { get; } = new DoublePoint(-7, -7);
-
-        internal int Height
+        public int Height
         {
             get { return _height; }
             set
@@ -37,7 +36,7 @@ namespace FunctionDrawer
             }
         }
 
-        internal int Width
+        public int Width
         {
             get { return _width; }
             set
@@ -75,42 +74,30 @@ namespace FunctionDrawer
 
         private DoublePoint Movement
         {
-            get { return _movement; }
+            get { return FunctionCalc.Movement; }
             set
             {
-                _movement = value;
+                FunctionCalc.Movement = value;
                 OnPropertyChanged();
             }
         }
 
         #endregion
 
-        public ViewModel()
+        #region Public methods
+
+        public DrawerViewModel()
         {
             Function = "x";
             Function = "sin(x)";
-        }
-
-        internal void EvaluateOperation(string input)
-        {
-            Operation = null;
-            try
-            {
-                Operation = new ExpressionEvaluator().Evaluate(input);
-                ErrorMessage = string.Empty;
-            }
-            catch (Exception ex)
-            {
-                ErrorMessage = string.Format(Resources.Error, ex.Message);
-            }
         }
 
         public void ChangeScale(int locationX, int locationY, double scaleX, double scaleY)
         {
             ShortMove(locationX, locationY);
 
-            ScaleFactor.X -= scaleX;
-            ScaleFactor.Y -= scaleY;
+            FunctionCalc.ScaleFactor.X -= scaleX;
+            FunctionCalc.ScaleFactor.Y -= scaleY;
 
             ShortMove(-locationX, -locationY);
         }
@@ -125,24 +112,44 @@ namespace FunctionDrawer
             if (_moveStartPoint == null)
                 return;
 
-            Movement = _moveStartPoint + new DoublePoint(x, y) * Scale;
-        }
-
-        private void ShortMove(int x, int y)
-        {
-            Movement += new DoublePoint(x, y) * Scale;
+            Movement = _moveStartPoint + new DoublePoint(x, y) * FunctionCalc.Scale;
         }
 
         public void Paint(Graphics graphics)
         {
             //graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            if (Operation == null)
+            if (FunctionCalc.Operation == null)
                 return;
 
             DrawCoordinateSystem(graphics);
             
             DrawFunction(graphics);
         }
+
+        #endregion
+
+        #region Private methods
+
+        private void EvaluateOperation(string input)
+        {
+            FunctionCalc.Operation = null;
+            try
+            {
+                FunctionCalc.Operation = new ExpressionEvaluator().Evaluate(input);
+                ErrorMessage = string.Empty;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = string.Format(Resources.Error, ex.Message);
+            }
+        }
+
+        private void ShortMove(int x, int y)
+        {
+            Movement += new DoublePoint(x, y) * FunctionCalc.Scale;
+        }
+
+        #region Coordinate system
 
         private void DrawCoordinateSystem(Graphics graphics)
         {
@@ -153,32 +160,32 @@ namespace FunctionDrawer
             var font = new Form().Font;
 
             // vertical line
-            var lineX = (int)GetScreenXFromX(0);
+            var lineX = (int)FunctionCalc.GetScreenXFromX(0);
             lineX = Math.Min(Math.Max(lineX, borderSpace * 2), Width - borderSpace * 2);
 
             graphics.DrawLines(pen, GetLineWithArrow(lineX, borderSpace, lineX, Height - borderSpace));
 
-            foreach (var y in GetLabelPoints(Scale.Y, GetYFromScreenY(Width - borderSpace), borderSpace, GetScreenYFromY))
+            foreach (var y in GetLabelPoints(FunctionCalc.Scale.Y, FunctionCalc.GetYFromScreenY(Width - borderSpace), borderSpace, FunctionCalc.GetScreenYFromY))
             {
                 graphics.DrawLine(pen, lineX - 2, (int)y, lineX + 2, (int)y);
 
-                var value = GetYFromScreenY(y) / 10 * 10;
+                var value = FunctionCalc.GetYFromScreenY(y) / 10 * 10;
                 if (Math.Abs(value) > 1e-12)
                     graphics.DrawString(value.ToString(CultureInfo.InvariantCulture),
                         font, brush, lineX + 5, (int)y - 4);
             }
 
             // horizontal line
-            var lineY = (int)GetScreenYFromY(0);
+            var lineY = (int)FunctionCalc.GetScreenYFromY(0);
             lineY = Math.Min(Math.Max(lineY, borderSpace * 2), Height - borderSpace * 2);
 
             graphics.DrawLines(pen, GetLineWithArrow(borderSpace, lineY, Width - borderSpace, lineY));
 
-            foreach (var x in GetLabelPoints(Scale.X, GetXFromScreenX(borderSpace), Width - borderSpace, GetScreenXFromX))
+            foreach (var x in GetLabelPoints(FunctionCalc.Scale.X, FunctionCalc.GetXFromScreenX(borderSpace), Width - borderSpace, FunctionCalc.GetScreenXFromX))
             {
                 graphics.DrawLine(pen, (int)x, lineY - 2, (int)x, lineY + 2);
 
-                var value = GetXFromScreenX(x) / 10 * 10;
+                var value = FunctionCalc.GetXFromScreenX(x) / 10 * 10;
                 if (Math.Abs(value) > 1e-12)
                     graphics.DrawString(value.ToString(CultureInfo.InvariantCulture),
                         font, brush, (int)x - 4, lineY + 5);
@@ -201,7 +208,7 @@ namespace FunctionDrawer
 
                 current += unit * 0.999;
                 var newValue = getScreenVFromV(current - current % unit);
-                if (newValue == value && 0 != current - current % unit)
+                if (Math.Abs(newValue - value) < 1e-14 && Math.Abs(current - current % unit) > 1e-14)
                     break;
                 value = newValue;
             }
@@ -236,6 +243,8 @@ namespace FunctionDrawer
             return new Point[0];
         }
 
+        #endregion
+
         private void DrawFunction(Graphics graphics)
         {
             //TODO
@@ -261,15 +270,16 @@ namespace FunctionDrawer
                         //graphics.DrawLine(new Pen(Color.Black), screenX, screenY, screenX-1, last.Value);
 
                     }
-                }
-                if (last != null /*&& Math.Abs(screenY - last.Value) > 1*/)
-                {
-                    var x1 = Math.Max(0, Math.Min(Width, screenX));
-                    var x2 = Math.Max(0, Math.Min(Width, screenX - 1));
-                    var y1 = Math.Max(0, Math.Min(Height, screenY));
-                    var y2 = Math.Max(0, Math.Min(Height, last.Value));
-                    if (y1 != 0 && y2 != Height && y2 != 0 && y1 != Height)
-                    graphics.DrawLine(new Pen(Color.Black), x1, y1, x2, y2);
+                    if (last != null /*&& Math.Abs(screenY - last.Value) > 1*/)
+                    {
+                        var x1 = Math.Max(-1, Math.Min(Width, screenX));
+                        var x2 = Math.Max(-1, Math.Min(Width, screenX - 1));
+                        var y1 = Math.Max(-1, Math.Min(Height, screenY));
+                        var y2 = Math.Max(-1, Math.Min(Height, last.Value));
+                        //if (y1 != -1 && y2 != Height && y2 != -1 && y1 != Height)
+                        if (!(y1 == -1 && y2 == Height || y2 == -1 && y1 == Height))
+                            graphics.DrawLine(new Pen(Color.Black), x1, y1, x2, y2);
+                    }
                 }
                 last = screenY;
                 //else
@@ -360,34 +370,25 @@ namespace FunctionDrawer
         //    //return x >= 0 ? value : -value;
         //}
 
-        private DoublePoint Scale => new DoublePoint(Math.Pow(2, ScaleFactor.X), Math.Pow(2, ScaleFactor.Y));
-
-        internal double GetXFromScreenX(double screenX) => screenX * Scale.X + Movement.X;
-        internal double GetScreenXFromX(double x) => (x - Movement.X) / Scale.X;
-
-        internal double GetYFromX(double x) => Operation.Result(x);
-
-        private double GetScreenYFromY(double y) => -(y + Movement.Y) / Scale.Y;
-        private double GetYFromScreenY(double screenY) => -screenY * Scale.Y - Movement.Y;
-        //private double GetScreenYFromY2(double y) => -(y + _movement.Y) / Scale.Y;
-
         private bool TryGetPointAt(double screenX, out int value)
         {
             value = -1;
             try
             {
-                var result = GetYFromX(GetXFromScreenX(screenX));
+                var result = FunctionCalc.GetYFromX(FunctionCalc.GetXFromScreenX(screenX));
                 if (double.IsNaN(result) || double.IsInfinity(result))
                     return false;
 
-                result = GetScreenYFromY(result);
+                result = FunctionCalc.GetScreenYFromY(result);
 
                 if (result > Height)
                     result = Height;
+                if (result < -1)
+                    result = -1;
 
-                if (result >= 0 && result < Height)
+                value = (int)result;
+                //if (value >= 0 && value < Height)
                 {
-                    value = (int) result;
                     return true;
                 }
             }
@@ -396,33 +397,9 @@ namespace FunctionDrawer
                 return false;
             }
 
-            return false;
+            //return false;
         }
 
-        internal class DoublePoint
-        {
-            public double X { get; set; }
-            public double Y { get; set; }
-
-            public DoublePoint() : this(0, 0) { }
-
-            public DoublePoint(double x, double y)
-            { X = x; Y = y; }
-
-            public static implicit operator DoublePoint(Point point)
-                => new DoublePoint(point.X, point.Y);
-
-            public static DoublePoint operator +(DoublePoint doublePoint, DoublePoint point2)
-                => new DoublePoint(doublePoint.X + point2.X, doublePoint.Y + point2.Y);
-
-            public static DoublePoint operator -(DoublePoint doublePoint, Point point2)
-                => new DoublePoint(doublePoint.X - point2.X, doublePoint.Y - point2.Y);
-
-            public static DoublePoint operator -(DoublePoint doublePoint, double value)
-                => new DoublePoint(doublePoint.X - value, doublePoint.Y - value);
-
-            public static DoublePoint operator *(DoublePoint doublePoint, DoublePoint point2)
-                => new DoublePoint(doublePoint.X * point2.X, doublePoint.Y * point2.Y);
-        }
+        #endregion
     }
 }
