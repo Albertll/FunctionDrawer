@@ -21,7 +21,8 @@ namespace FunctionDrawer
 
         private Point _mousePos;
 
-        private void Redraw() => Invalidate();
+        private void Redraw()
+            => Invalidate();
 
         #region Override methods
 
@@ -47,30 +48,28 @@ namespace FunctionDrawer
             Redraw();
         }
 
-        protected override void OnMouseWheel(MouseEventArgs e)
+        protected override async void OnMouseWheel(MouseEventArgs e)
         {
+            const int iterations = 10;
+            const int time = 50;
+
             base.OnMouseWheel(e);
 
-            var dirX = e.Delta / 5.0 / Math.Abs(e.Delta);
-            var dirY = e.Delta / 5.0 / Math.Abs(e.Delta);
+            var dirX = e.Delta * 1.0 / iterations / Math.Abs(e.Delta);
+            var dirY = e.Delta * 1.0 / iterations / Math.Abs(e.Delta);
             if (ModifierKeys.HasFlag(Keys.Shift))
                 dirX = 0;
             if (ModifierKeys.HasFlag(Keys.Control))
                 dirY = 0;
+            
+            for (var i = 0; i < iterations; i++)
+            {
+                DrawerViewModel.ChangeScale(e.Location.X, e.Location.Y, dirX, dirY);
 
-            new Task(
-                () =>
-                {
-                    for (var i = 0; i < 5; i++)
-                    {
-                        BeginInvoke((Action)(() =>
-                        {
-                            DrawerViewModel.ChangeScale(e.Location.X, e.Location.Y, dirX, dirY);
-                            _lbS.Text = $@"Scale: X = {DrawerViewModel.FunctionCalc.ScaleFactor.X}, Y = {DrawerViewModel.FunctionCalc.ScaleFactor.Y}";
-                        }));
-                        Thread.Sleep(30);
-                    }
-                }).Start();
+                _lbS.Text = $@"Scale: X = {DrawerViewModel.FunctionCalc.ScaleFactor.X}, Y = {DrawerViewModel.FunctionCalc.ScaleFactor.Y}";
+
+                await Task.Delay(time / iterations);
+            }
         }
 
         protected override void OnMouseDown(MouseEventArgs e)
@@ -95,19 +94,16 @@ namespace FunctionDrawer
             {
                 DrawerViewModel.MoveScreen(_mousePos.X - e.Location.X, _mousePos.Y - e.Location.Y);
             }
-            else
+            
+            var x = DrawerViewModel.FunctionCalc.GetXFromScreenX(e.X);
+            _lbX.Text = $@"X = {x}";
+            try
             {
-                var x = DrawerViewModel.FunctionCalc.GetXFromScreenX(e.X);
-                _lbX.Text = $@"X = {x}";
-                try
-                {
-                    _lbY.Text = $@"Y = {DrawerViewModel.FunctionCalc.GetYFromX(x)}";
-                }
-                catch
-                {
-                    if (DrawerViewModel.FunctionCalc.Operation != null)
-                        _lbY.Text = $@"Y = NaN";
-                }
+                _lbY.Text = $@"Y = {DrawerViewModel.FunctionCalc.GetYFromX(x)}";
+            }
+            catch
+            {
+                _lbY.Text = @"Y = NaN";
             }
         }
 

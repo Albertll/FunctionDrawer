@@ -15,14 +15,14 @@ namespace FunctionDrawer.Tests
             Assert.AreEqual(evaluator.Evaluate("2+3").Result(0), 5);
             Assert.AreEqual(evaluator.Evaluate("2*3").Result(0), 6);
             Assert.AreEqual(evaluator.Evaluate("2*3+1").Result(0), 7);
-            Assert.AreEqual(evaluator.Evaluate("x").Result(4), -4);
+            Assert.AreEqual(evaluator.Evaluate("x").Result(4), 4);
             Assert.AreEqual(evaluator.Evaluate("-x").Result(7), -7);
             Assert.AreEqual(evaluator.Evaluate("2*x").Result(3), 6);
             Assert.AreEqual(evaluator.Evaluate("2x").Result(3), 6);
             Assert.AreEqual(evaluator.Evaluate("sin(x)").Result(0), 0);
             Assert.AreEqual(evaluator.Evaluate("cos(x)+sin(x)").Result(0), 1);
-            Assert.AreEqual(evaluator.Evaluate("-sin(x)").Result(0), 1);
-            Assert.AreEqual(evaluator.Evaluate("sin(-x)").Result(0), 1);
+            Assert.AreEqual(evaluator.Evaluate("-sin(x)").Result(0), 0);
+            Assert.AreEqual(evaluator.Evaluate("sin(-x)").Result(0), 0);
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using FunctionDrawer.Operations;
 using FunctionDrawer.Properties;
 
 namespace FunctionDrawer
@@ -104,12 +105,18 @@ namespace FunctionDrawer
         {
             // remove spaces
             text = Regex.Replace(text, @"\s+", "");
-            // change e.g. "f(t) = 4t" to "4x"
+
+            // change e.g. "f(t) = 4t" to "f(x) = 4x"
             if (Regex.IsMatch(text, @"\w+\((\w+)\)=(.*)"))
                 text = Regex.Replace(text, Regex.Replace(text, @"\w+\((\w+)\)=(.*)", "$1"), "x");
+
+            // change e.g. "f(x) = 4x" to "4x"
             text = Regex.Replace(text, @"\w+\(\w+\)=(.*)", "$1");
-            // change expression with negative number first to neg function
-            text = Regex.Replace(text, @"(?<=[^\d\)xe]|^)\-(\d+)", "neg($1)");
+
+            // change expression with negative, e.g. "-sin(-x)" to "0-sin(0-x)"
+            text = Regex.Replace(text, @"^-.*", "0$0");
+            text = Regex.Replace(text, @"(?<=\()-.*?", "0$0");
+
             // add multiplication to bracket expression or x
             text = Regex.Replace(text, @"(?<=[\d\)x])(?=[\(x])", "*");
             text = Regex.Replace(text, @"\)(?=\d)", ")*");
@@ -118,7 +125,7 @@ namespace FunctionDrawer
             _temp = new StringBuilder();
             _rnp = new List<string>();
 
-            for (int i = 0; i < text.Length; i++)
+            for (var i = 0; i < text.Length; i++)
             {
                 var current = text[i];
                 var next = i + 1 < text.Length ? text[i + 1] : '\0';
@@ -192,7 +199,7 @@ namespace FunctionDrawer
 
             return false;
         }
-
+        
         private bool EvaluateFunction(char c, char next)
         {
             if (char.IsLetter(c) || _funcs.Contains(c.ToString()))
@@ -203,7 +210,7 @@ namespace FunctionDrawer
                 var op = _temp.ToString();
                 _temp.Clear();
 
-                while (_stack.Count != 0 && !HasHigherPrior(op, _stack.Peek()))
+                while (_stack.Count != 0 && !HasHigherPriority(op, _stack.Peek()))
                     _rnp.Add(_stack.Pop());
 
                 _stack.Push(op);
@@ -214,11 +221,11 @@ namespace FunctionDrawer
             return false;
         }
 
-        private static bool HasHigherPrior(string op1, string op2) => GetPrior(op1) > GetPrior(op2);
+        private static bool HasHigherPriority(string op1, string op2) => GetOperatorPriority(op1) > GetOperatorPriority(op2);
 
-        private static int GetPrior(string op)
+        private static int GetOperatorPriority(string @operator)
         {
-            switch (op)
+            switch (@operator)
             {
                 case "+":
                 case "-":

@@ -1,4 +1,5 @@
 ﻿using System;
+using FunctionDrawer.Operations;
 
 namespace FunctionDrawer
 {
@@ -25,7 +26,5 @@ namespace FunctionDrawer
 
         public double GetYFromScreenY(double screenY)
             => -screenY * Scale.Y - Movement.Y;
-
-        //private double GetScreenYFromY2(double y) => -(y + _movement.Y) / Scale.Y;
     }
 }

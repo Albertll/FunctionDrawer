@@ -62,7 +62,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DirectBitmap.cs" />
     <Compile Include="DoublePoint.cs" />
     <Compile Include="ExpressionEvaluator.cs" />
     <Compile Include="DrawerMainView.cs">
@@ -74,13 +73,34 @@
     <Compile Include="FunctionCalculator.cs" />
     <Compile Include="IDrawerViewModel.cs" />
     <Compile Include="IFunctionCalculator.cs" />
+    <Compile Include="Operations\Abs.cs" />
+    <Compile Include="Operations\Addition.cs" />
+    <Compile Include="Operations\Cosinus.cs" />
+    <Compile Include="Operations\Division.cs" />
+    <Compile Include="Operations\IOperation.cs" />
     <Compile Include="NotifyPropertyChanged.cs" />
-    <Compile Include="Operations.cs" />
+    <Compile Include="Operations\Log.cs" />
+    <Compile Include="Operations\Multiplication.cs" />
+    <Compile Include="Operations\Negative.cs" />
+    <Compile Include="Operations\OneArgumentOperation.cs" />
+    <Compile Include="Operations\Operation.cs" />
+    <Compile Include="Operations\Pi.cs" />
+    <Compile Include="Operations\Power.cs" />
+    <Compile Include="Operations\Sinus.cs" />
+    <Compile Include="Operations\Subtraction.cs" />
+    <Compile Include="Operations\Tangens.cs" />
+    <Compile Include="Operations\TwoArgumentsOperation.cs" />
+    <Compile Include="Operations\Value.cs" />
+    <Compile Include="Operations\X.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="DrawerViewModel.cs" />
     <EmbeddedResource Include="DrawerMainView.resx">
       <DependentUpon>DrawerMainView.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="DrawerMainView.pl.resx">
+      <DependentUpon>DrawerMainView.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

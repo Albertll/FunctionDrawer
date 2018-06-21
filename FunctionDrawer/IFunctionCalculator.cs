@@ -1,4 +1,6 @@
-﻿namespace FunctionDrawer
+﻿using FunctionDrawer.Operations;
+
+namespace FunctionDrawer
 {
     internal interface IFunctionCalculator
     {

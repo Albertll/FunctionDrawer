@@ -45,9 +45,6 @@ namespace FunctionDrawer
                 _width = value;
                 _moveStartPoint = null;
                 ShortMove((org - value) / 2, 0);
-                //TODO
-                //if (org > value)
-                //    _scaleShift.X += 0.003;
             }
         }
 
@@ -88,7 +85,7 @@ namespace FunctionDrawer
 
         public DrawerViewModel()
         {
-            Function = "x";
+            //Function = "x";
             Function = "sin(x)";
         }
 
@@ -96,8 +93,11 @@ namespace FunctionDrawer
         {
             ShortMove(locationX, locationY);
 
-            FunctionCalc.ScaleFactor.X -= scaleX;
-            FunctionCalc.ScaleFactor.Y -= scaleY;
+            FunctionCalc.ScaleFactor.X -= (float)scaleX;
+            FunctionCalc.ScaleFactor.Y -= (float)scaleY;
+
+            FunctionCalc.ScaleFactor.X = Math.Round(FunctionCalc.ScaleFactor.X * 100) / 100;
+            FunctionCalc.ScaleFactor.Y = Math.Round(FunctionCalc.ScaleFactor.Y * 100) / 100;
 
             ShortMove(-locationX, -locationY);
         }
@@ -145,9 +145,7 @@ namespace FunctionDrawer
         }
 
         private void ShortMove(int x, int y)
-        {
-            Movement += new DoublePoint(x, y) * FunctionCalc.Scale;
-        }
+            => Movement += new DoublePoint(x, y) * FunctionCalc.Scale;
 
         #region Coordinate system
 
@@ -160,36 +158,62 @@ namespace FunctionDrawer
             var font = new Form().Font;
 
             // vertical line
-            var lineX = (int)FunctionCalc.GetScreenXFromX(0);
-            lineX = Math.Min(Math.Max(lineX, borderSpace * 2), Width - borderSpace * 2);
+            var lineX = MinMax(
+                (int)FunctionCalc.GetScreenXFromX(0), 
+                borderSpace * 2, 
+                Width - borderSpace * 2);
 
             graphics.DrawLines(pen, GetLineWithArrow(lineX, borderSpace, lineX, Height - borderSpace));
 
-            foreach (var y in GetLabelPoints(FunctionCalc.Scale.Y, FunctionCalc.GetYFromScreenY(Width - borderSpace), borderSpace, FunctionCalc.GetScreenYFromY))
+            foreach (var y in GetLabelPoints(FunctionCalc.Scale.Y, FunctionCalc.GetYFromScreenY(Height - borderSpace), borderSpace, FunctionCalc.GetScreenYFromY))
             {
-                graphics.DrawLine(pen, lineX - 2, (int)y, lineX + 2, (int)y);
+                graphics.DrawLine(pen, 
+                    lineX - 2, (int)y, 
+                    lineX + 2, (int)y);
 
-                var value = FunctionCalc.GetYFromScreenY(y) / 10 * 10;
+                var value = (float)FunctionCalc.GetYFromScreenY(y);
                 if (Math.Abs(value) > 1e-12)
                     graphics.DrawString(value.ToString(CultureInfo.InvariantCulture),
                         font, brush, lineX + 5, (int)y - 4);
             }
 
             // horizontal line
-            var lineY = (int)FunctionCalc.GetScreenYFromY(0);
-            lineY = Math.Min(Math.Max(lineY, borderSpace * 2), Height - borderSpace * 2);
+            var lineY = MinMax(
+                (int)FunctionCalc.GetScreenYFromY(0), 
+                borderSpace * 2, 
+                Height - borderSpace * 2);
 
             graphics.DrawLines(pen, GetLineWithArrow(borderSpace, lineY, Width - borderSpace, lineY));
 
             foreach (var x in GetLabelPoints(FunctionCalc.Scale.X, FunctionCalc.GetXFromScreenX(borderSpace), Width - borderSpace, FunctionCalc.GetScreenXFromX))
             {
-                graphics.DrawLine(pen, (int)x, lineY - 2, (int)x, lineY + 2);
+                graphics.DrawLine(pen, 
+                    (int)x, lineY - 2, 
+                    (int)x, lineY + 2);
 
-                var value = FunctionCalc.GetXFromScreenX(x) / 10 * 10;
+                var value = (float)FunctionCalc.GetXFromScreenX(x);
                 if (Math.Abs(value) > 1e-12)
                     graphics.DrawString(value.ToString(CultureInfo.InvariantCulture),
                         font, brush, (int)x - 4, lineY + 5);
+                else
+                {
+                    if (Math.Abs(value) > 0)
+                    {
+
+                    }
+                }
             }
+        }
+
+        // ReSharper disable once ConvertIfStatementToReturnStatement
+        public static T MinMax<T>(T value, T min, T max) where T : IComparable<T>
+        {
+            if (value.CompareTo(min) < 0)
+                return min;
+            if (value.CompareTo(max) > 0)
+                return max;
+
+            return value;
         }
 
         private static IEnumerable<double> GetLabelPoints(double scaleFactor, double start, double end, Func<double, double> getScreenVFromV)
@@ -206,7 +230,7 @@ namespace FunctionDrawer
             {
                 yield return value;
 
-                current += unit * 0.999;
+                current += unit * 0.99999999;
                 var newValue = getScreenVFromV(current - current % unit);
                 if (Math.Abs(newValue - value) < 1e-14 && Math.Abs(current - current % unit) > 1e-14)
                     break;
