@@ -9,5 +9,8 @@ namespace FunctionDrawer.Operations
 
         protected override double Evaluate(double x)
             => Math.Tan(Right.Result(x));
+
+        public override string ToString()
+            => $"tg({Right})";
     }
 }

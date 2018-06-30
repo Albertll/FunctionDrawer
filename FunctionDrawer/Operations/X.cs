@@ -4,5 +4,8 @@
     {
         protected override double Evaluate(double x)
             => x;
+
+        public override string ToString()
+            => "x";
     }
 }

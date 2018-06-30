@@ -7,5 +7,8 @@
 
         protected override double Evaluate(double x)
             => Left.Result(x) * Right.Result(x);
+
+        public override string ToString()
+            => $"({Left}*{Right})";
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Windows.Forms;
 
 namespace FunctionDrawer
@@ -14,6 +15,14 @@ namespace FunctionDrawer
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new DrawerMainView());
+        }
+
+        public static void ForEach<T>(this IEnumerable<T> objects, Action<T> action)
+        {
+            foreach (var obj in objects)
+            {
+                action(obj);
+            }
         }
     }
 }

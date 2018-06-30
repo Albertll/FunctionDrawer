@@ -6,5 +6,8 @@ namespace FunctionDrawer.Operations
     {
         protected override double Evaluate(double x)
             => Math.PI;
+
+        public override string ToString()
+            => "PI";
     }
 }

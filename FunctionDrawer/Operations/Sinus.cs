@@ -9,5 +9,8 @@ namespace FunctionDrawer.Operations
 
         protected override double Evaluate(double x)
             => Math.Sin(Right.Result(x));
+
+        public override string ToString()
+            => $"sin({Right})";
     }
 }

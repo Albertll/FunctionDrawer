@@ -14,5 +14,8 @@ namespace FunctionDrawer.Operations
 
             return Left.Result(x) / Right.Result(x);
         }
+
+        public override string ToString()
+            => $"({Left}/{Right})";
     }
 }

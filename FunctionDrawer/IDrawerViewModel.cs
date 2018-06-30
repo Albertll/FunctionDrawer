@@ -1,5 +1,7 @@
-﻿using System.ComponentModel;
+﻿using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
+using FunctionDrawer.Operations;
 
 namespace FunctionDrawer
 {
@@ -8,6 +10,7 @@ namespace FunctionDrawer
         string ErrorMessage { get; }
         string Function { get; }
         IFunctionCalculator FunctionCalc { get; }
+        IEnumerable<IOperation> Operations { get; }
 
         int Width { get; set; }
         int Height { get; set; }

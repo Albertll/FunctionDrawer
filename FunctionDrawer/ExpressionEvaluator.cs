@@ -17,7 +17,7 @@ namespace FunctionDrawer
 
         public IOperation Evaluate(string text)
         {
-            MakeRnp(text.ToLowerInvariant());
+            MakeRnp(PrepareText(text));
 
             var operationStack = new Stack<Operation>();
 
@@ -101,7 +101,7 @@ namespace FunctionDrawer
             return operationStack.Pop();
         }
 
-        private void MakeRnp(string text)
+        private static string PrepareText(string text)
         {
             // remove spaces
             text = Regex.Replace(text, @"\s+", "");
@@ -121,6 +121,12 @@ namespace FunctionDrawer
             text = Regex.Replace(text, @"(?<=[\d\)x])(?=[\(x])", "*");
             text = Regex.Replace(text, @"\)(?=\d)", ")*");
 
+            return text.ToLowerInvariant();
+        }
+
+
+        private void MakeRnp(string text)
+        {
             _stack = new Stack<string>();
             _temp = new StringBuilder();
             _rnp = new List<string>();
@@ -221,7 +227,8 @@ namespace FunctionDrawer
             return false;
         }
 
-        private static bool HasHigherPriority(string op1, string op2) => GetOperatorPriority(op1) > GetOperatorPriority(op2);
+        private static bool HasHigherPriority(string op1, string op2)
+            => GetOperatorPriority(op1) > GetOperatorPriority(op2);
 
         private static int GetOperatorPriority(string @operator)
         {

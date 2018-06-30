@@ -5,7 +5,6 @@ namespace FunctionDrawer
     internal interface IFunctionCalculator
     {
         DoublePoint Movement { get; }
-        IOperation Operation { get; }
         DoublePoint Scale { get; }
         DoublePoint ScaleFactor { get; }
 
@@ -13,6 +12,6 @@ namespace FunctionDrawer
         double GetScreenYFromY(double y);
         double GetXFromScreenX(double screenX);
         double GetYFromScreenY(double screenY);
-        double GetYFromX(double x);
+        double GetYFromX(IOperation operation, double x);
     }
 }

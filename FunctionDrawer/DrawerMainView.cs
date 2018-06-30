@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Drawing;
-using System.Threading;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -84,7 +84,7 @@ namespace FunctionDrawer
         {
             base.OnMouseMove(e);
 
-            if (DrawerViewModel.FunctionCalc.Operation == null)
+            if (!DrawerViewModel.Operations.Any())
             {
                 _lbX.Text = _lbY.Text = string.Empty;
                 return;
@@ -99,7 +99,7 @@ namespace FunctionDrawer
             _lbX.Text = $@"X = {x}";
             try
             {
-                _lbY.Text = $@"Y = {DrawerViewModel.FunctionCalc.GetYFromX(x)}";
+                _lbY.Text = $@"Y = {DrawerViewModel.FunctionCalc.GetYFromX(DrawerViewModel.Operations.First(), x)}";
             }
             catch
             {
